@@ -1,6 +1,6 @@
-# Starter Kit
+# Python Package Kit
 
-GitHub Issue 기반 협업 워크플로우를 빠르게 적용할 수 있는 스타터킷입니다.
+GitHub Issue 기반 협업 워크플로우를 빠르게 적용할 수 있는 Python 라이브러리 보일러플레이트입니다.
 
 ---
 
@@ -11,7 +11,9 @@ GitHub Issue 기반 협업 워크플로우를 빠르게 적용할 수 있는 스
 3. [브랜치 구조](#브랜치-구조)
 4. [개발 흐름](#개발-흐름)
 5. [자동화](#자동화)
-6. [가이드](#가이드)
+6. [실행 명령](#실행-명령)
+7. [배포](#배포)
+8. [가이드](#가이드)
 
 ---
 
@@ -39,26 +41,19 @@ GitHub Issue 기반 협업 워크플로우를 빠르게 적용할 수 있는 스
 │   └── guides/
 │       ├── COMMIT.md                   # 커밋 메시지 작성 가이드
 │       ├── GIT_WORKFLOW.md             # Git 워크플로우 가이드
-│       ├── CODE_REVIEW.md              # 코드 리뷰 가이드
-│       └── MONITORING.md              # 모니터링 가이드 (PLG 스택)
-├── config/
-│   ├── loki/config.yml                 # Loki 설정
-│   ├── alloy/config.alloy              # Alloy 파이프라인 설정
-│   └── grafana/provisioning/
-│       └── datasources/loki.yml        # Grafana Loki 데이터소스 자동 등록
+│       └── CODE_REVIEW.md              # 코드 리뷰 가이드
 ├── src/
-│   ├── monitoring/
-│   │   └── logger.py                   # 구조화 JSON 로거 (structlog)
-│   └── main.py                         # 프로젝트 진입점
+│   └── <package_name>/
+│       └── __init__.py                 # 라이브러리 진입점
 ├── tests/
 │   ├── __init__.py
 │   └── conftest.py                     # 공용 pytest fixture
-├── docker-compose.monitoring.yaml       # 모니터링 스택 (Loki + Alloy + Grafana)
 ├── .env.example                        # 환경 변수 예시
 ├── .bandit.yaml                        # bandit 보안 검사 설정
 ├── .ruff.toml                          # ruff 린트/포맷 설정
+├── hatch.toml                          # hatch 빌드/버전/스크립트 설정
 ├── lefthook.yml                        # pre-commit 훅 설정
-├── pyproject.toml                      # 프로젝트 의존성 (uv)
+├── pyproject.toml                      # 프로젝트 메타데이터 및 의존성
 └── pytest.ini                          # pytest 설정
 ```
 
@@ -66,30 +61,34 @@ GitHub Issue 기반 협업 워크플로우를 빠르게 적용할 수 있는 스
 
 ## 시작하기
 
-### 1. 레포지토리 생성
+### 1. 패키지 이름 설정
+
+`pyproject.toml`의 `name`, `hatch.toml`의 `packages` 경로, `src/<package_name>/` 폴더명을 실제 패키지 이름으로 변경합니다.
+
+### 2. 레포지토리 생성
 
 이 레포지토리를 템플릿으로 사용하거나 파일을 복사합니다.
 
-### 2. `dev` 브랜치 생성
+### 3. `dev` 브랜치 생성
 
 ```bash
 git checkout -b dev
 git push origin dev
 ```
 
-### 3. 기본 브랜치 설정
+### 4. 기본 브랜치 설정
 
 GitHub 레포지토리 설정에서 기본 브랜치를 `dev`로 변경합니다.
 
 > `Settings` → `General` → `Default branch` → `dev`
 
-### 4. 의존성 설치
+### 5. 의존성 설치
 
 ```bash
 uv sync
 ```
 
-### 5. pre-commit 훅 등록
+### 6. pre-commit 훅 등록
 
 ```bash
 lefthook install
@@ -126,7 +125,7 @@ dev ◄─── feature/dev-<n>    dev
 5. **코드 리뷰** — [코드 리뷰 가이드](docs/guides/CODE_REVIEW.md)에 따라 리뷰합니다.
 6. **Rebase Merge** — 리뷰 완료 후 `dev`에 Rebase Merge합니다.
 
-### 배포 (dev → main)
+### 릴리즈 (dev → main)
 
 1. **PR 생성** — `dev` → `main` PR을 생성합니다. (제목: `release: v1.0.0`)
 2. **리뷰 및 승인** — 배포 범위와 변경사항을 최종 확인합니다.
@@ -176,17 +175,10 @@ lefthook run pre-commit
 ### 린트 & 포맷
 
 ```bash
-# 린트 검사
-uv run ruff check .
-
-# 린트 자동 수정
-uv run ruff check --fix .
-
-# 포맷 검사
-uv run ruff format --check .
-
-# 포맷 적용
-uv run ruff format .
+uv run ruff check .          # 린트 검사
+uv run ruff check --fix .    # 린트 자동 수정
+uv run ruff format --check . # 포맷 검사
+uv run ruff format .         # 포맷 적용
 ```
 
 ### 보안 검사
@@ -198,14 +190,58 @@ uv run bandit -r src/
 ### 테스트
 
 ```bash
-# 전체 테스트 (커버리지 포함)
-uv run pytest
+uv run pytest                      # 전체 테스트 (커버리지 포함)
+uv run pytest --no-cov             # 커버리지 제외
+uv run pytest --no-cov -n auto     # 병렬 실행
+```
 
-# 커버리지 제외 (빠른 실행)
-uv run pytest --no-cov
+### hatch 스크립트
 
-# 병렬 실행
-uv run pytest --no-cov -n auto
+```bash
+hatch run test          # pytest 전체
+hatch run test-fast     # 커버리지 제외 병렬 실행
+hatch run lint          # ruff check
+hatch run lint-fix      # ruff 자동 수정
+hatch run format        # ruff format
+hatch run format-check  # 포맷 검사
+hatch run security      # bandit 보안 검사
+```
+
+---
+
+## 배포
+
+### PyPI 배포
+
+```bash
+# 1. main 머지 후 태그 생성 (hatch-vcs가 태그에서 버전 자동 추출)
+git tag v1.0.0
+git push origin v1.0.0
+
+# 2. 빌드
+uv build
+
+# 3. 배포
+uv publish --token pypi-xxxx...
+```
+
+### GitHub에서 직접 설치 (PyPI 배포 없이)
+
+```bash
+# main 브랜치
+pip install git+https://github.com/<org>/<package-name>.git
+
+# 특정 태그
+pip install git+https://github.com/<org>/<package-name>.git@v1.0.0
+
+# uv 사용 시
+uv add git+https://github.com/<org>/<package-name>.git@v1.0.0
+```
+
+### 설치 후 사용
+
+```python
+from <package_name> import ...
 ```
 
 ---
@@ -217,7 +253,6 @@ uv run pytest --no-cov -n auto
 - [커밋 메시지 작성 가이드](docs/guides/COMMIT.md)
 - [Git 워크플로우 가이드](docs/guides/GIT_WORKFLOW.md)
 - [코드 리뷰 가이드](docs/guides/CODE_REVIEW.md)
-- [모니터링 가이드](docs/guides/MONITORING.md)
 
 ### 설정 가이드
 

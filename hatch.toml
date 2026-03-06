@@ -1,0 +1,29 @@
+[version]
+source = "vcs"  # git 태그(v1.0.0)에서 버전 자동 추출
+
+[build.targets.wheel]
+packages = ["src/<package_name>"]  # src/<package_name>/ 폴더를 생성 후 수정
+
+[build.targets.sdist]
+exclude = [
+    "/.github",
+    "/docs",
+    "/tests",
+    "/.venv",
+    "/.env*",
+    "/htmlcov",
+    "/.bandit.yaml",
+    "/.ruff.toml",
+    "/hatch.toml",
+    "/lefthook.yml",
+    "/pytest.ini",
+]
+
+[env.default.scripts]
+test = "pytest"
+test-fast = "pytest --no-cov -n auto -q"
+lint = "ruff check ."
+lint-fix = "ruff check --fix ."
+format = "ruff format ."
+format-check = "ruff format --check ."
+security = "bandit -r src/"
